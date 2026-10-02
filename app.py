@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 class RequestHandler(BaseHTTPRequestHandler):
     """Serve only technical endpoints required to check the service."""
 
-    def do_GET(self) -> None:  # noqa: N802 - method name is defined by BaseHTTPRequestHandler
+    def do_GET(self) -> None:
         if self.path == "/health":
             self._send_json(
                 HTTPStatus.OK,
