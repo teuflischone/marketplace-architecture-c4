@@ -15,7 +15,7 @@
 
 ## 2. C4 Container-диаграмма
 
-На диаграмме показаны основные сервисы, базы данных и связи между ними. В C4 контейнер — это отдельное приложение или хранилище, а не только Docker-контейнер.
+На диаграмме показаны основные сервисы, базы данных и связи между ними. В C4 контейнер - это отдельное приложение или хранилище, а не только Docker-контейнер.
 
 ```mermaid
 flowchart LR
@@ -26,15 +26,15 @@ flowchart LR
     messageProvider["Email / SMS провайдер<br/>External System"]
 
     subgraph marketplace["Marketplace — Software System"]
-        web["Web-приложение<br/>Container: Browser SPA<br/>Интерфейс покупателей и продавцов"]
-        gateway["API Gateway<br/>Container: HTTP API<br/>Единая точка входа"]
-        users["User Service<br/>Container: REST API<br/>Пользователи и роли"]
-        catalog["Catalog Service<br/>Container: REST API<br/>Товары и категории"]
-        feed["Feed Service<br/>Container: REST API<br/>Персональная лента"]
-        orders["Order Service<br/>Container: REST API<br/>Заказы и их статусы"]
-        payments["Payment Service<br/>Container: REST API<br/>Учёт платежей"]
-        notifications["Notification Service<br/>Container: Event Consumer<br/>Email и SMS"]
-        broker["Message Broker<br/>Container: Kafka / RabbitMQ<br/>События между сервисами"]
+        web["Web-приложение<br/>Browser SPA<br/>Интерфейс"]
+        gateway["API Gateway<br/>HTTP API<br/>Точка входа"]
+        users["User Service<br/>REST API<br/>Пользователи"]
+        catalog["Catalog Service<br/>REST API<br/>Товары"]
+        feed["Feed Service<br/>REST API<br/>Лента"]
+        orders["Order Service<br/>REST API<br/>Заказы"]
+        payments["Payment Service<br/>REST API<br/>Платежи"]
+        notifications["Notification Service<br/>Event Consumer<br/>Уведомления"]
+        broker["Message Broker<br/>Kafka / RabbitMQ<br/>События"]
 
         usersDb[("Users DB<br/>PostgreSQL")]
         catalogDb[("Catalog DB<br/>PostgreSQL")]
@@ -101,7 +101,7 @@ flowchart LR
 
 Я рассмотрел два варианта.
 
-### Вариант 1 — модульный монолит
+### Вариант 1 - модульный монолит
 
 Все части маркетплейса находятся в одном приложении, но разделены на модули.
 
@@ -117,7 +117,7 @@ flowchart LR
 - ошибка может повлиять на всё приложение;
 - модули со временем могут слишком сильно связаться друг с другом.
 
-### Вариант 2 — отдельные сервисы
+### Вариант 2 - отдельные сервисы
 
 Каждый домен находится в своём сервисе и хранит свои данные.
 
@@ -137,13 +137,13 @@ flowchart LR
 
 ### Что я выбрал
 
-Для этой работы я выбрал второй вариант — отдельные сервисы по доменам. У каталога, ленты, заказов и платежей разная ответственность и разная нагрузка. Например, ленту могут открывать намного чаще, чем оформлять заказы, поэтому её удобно масштабировать отдельно.
+Для этой работы я выбрал второй вариант - отдельные сервисы по доменам. У каталога, ленты, заказов и платежей разная ответственность и разная нагрузка. Например, ленту могут открывать намного чаще, чем оформлять заказы, поэтому её удобно масштабировать отдельно.
 
 Если бы это был маленький проект для первой версии продукта, я бы, скорее всего, начал с модульного монолита. Но для данного задания вариант с сервисами лучше показывает границы доменов, владение данными и разные способы взаимодействия.
 
 ## 6. Реализованный сервис
 
-В проекте поднят простой `Catalog Service`. Пока в нём нет работы с товарами — только технический health-check:
+В проекте поднят простой `Catalog Service`. Пока в нём нет работы с товарами - только технический health-check:
 
 ```text
 GET /health
@@ -158,7 +158,7 @@ GET /health
 }
 ```
 
-Статус ответа — `200 OK`.
+Статус ответа - `200 OK`.
 
 Если обратиться по неизвестному адресу, сервис вернёт `404 Not Found`.
 
