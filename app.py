@@ -1,5 +1,3 @@
-"""Minimal Catalog Service skeleton without business logic."""
-
 import json
 import os
 from http import HTTPStatus
@@ -7,8 +5,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    """Serve only technical endpoints required to check the service."""
-
     def do_GET(self) -> None:
         if self.path == "/health":
             self._send_json(
@@ -32,7 +28,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 def create_server(host: str = "0.0.0.0", port: int = 8080) -> ThreadingHTTPServer:
-    """Create the HTTP server separately so it can be tested."""
     return ThreadingHTTPServer((host, port), RequestHandler)
 
 
