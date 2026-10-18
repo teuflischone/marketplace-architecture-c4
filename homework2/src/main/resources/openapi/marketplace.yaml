@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: Marketplace homework API
+  version: 1.0.0
+  description: Учебный API для товаров и заказов. Идентификатор пользователя берётся из JWT.
+servers:
+  - url: http://localhost:8081
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ProductStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE, ARCHIVED]
+    OrderStatus:
+      type: string
+      enum: [CREATED, PAYMENT_PENDING, PAID, SHIPPED, COMPLETED, CANCELED]
+    Role:
+      type: string
+      enum: [USER, SELLER, ADMIN]
+    ProductCreate:
+      type: object
+      additionalProperties: false
+      required: [name, price, stock, category, status]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, nullable: true, maxLength: 4000}
+        price: {type: number, format: decimal, minimum: 0.01}
+        stock: {type: integer, minimum: 0}
+        category: {type: string, minLength: 1, maxLength: 100}
+        status: {$ref: '#/components/schemas/ProductStatus'}
+    ProductUpdate:
+      type: object
+      additionalProperties: false
+      required: [name, price, stock, category, status]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, nullable: true, maxLength: 4000}
+        price: {type: number, format: decimal, minimum: 0.01}
+        stock: {type: integer, minimum: 0}
+        category: {type: string, minLength: 1, maxLength: 100}
+        status: {$ref: '#/components/schemas/ProductStatus'}
+    ProductResponse:
+      type: object
+      required: [id, name, price, stock, category, status, seller_id, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string, nullable: true}
+        price: {type: number, format: decimal}
+        stock: {type: integer}
+        category: {type: string}
+        status: {$ref: '#/components/schemas/ProductStatus'}
+        seller_id: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    ProductPage:
+      type: object
+      required: [items, totalElements, page, size]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/ProductResponse'}}
+        totalElements: {type: integer}
+        page: {type: integer}
+        size: {type: integer}
+    OrderItemInput:
+      type: object
+      additionalProperties: false
+      required: [product_id, quantity]
+      properties:
+        product_id: {type: string, format: uuid}
+        quantity: {type: integer, minimum: 1, maximum: 999}
+    OrderCreate:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: {type: array, minItems: 1, maxItems: 50, items: {$ref: '#/components/schemas/OrderItemInput'}}
+        promo_code: {type: string, nullable: true, pattern: '^[A-Z0-9_]{4,20}$'}
+    OrderUpdate:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items: {type: array, minItems: 1, maxItems: 50, items: {$ref: '#/components/schemas/OrderItemInput'}}
+    OrderItemResponse:
+      type: object
+      required: [product_id, quantity, price_at_order]
+      properties:
+        product_id: {type: string, format: uuid}
+        quantity: {type: integer}
+        price_at_order: {type: number, format: decimal}
+    OrderResponse:
+      type: object
+      required: [id, user_id, status, total_amount, discount_amount, items, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        status: {$ref: '#/components/schemas/OrderStatus'}
+        promo_code: {type: string, nullable: true}
+        total_amount: {type: number, format: decimal}
+        discount_amount: {type: number, format: decimal}
+        items: {type: array, items: {$ref: '#/components/schemas/OrderItemResponse'}}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    OrderStatusUpdate:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {$ref: '#/components/schemas/OrderStatus'}
+    PromoCreate:
+      type: object
+      additionalProperties: false
+      required: [code, discount_type, discount_value, min_order_amount, max_uses, valid_from, valid_until]
+      properties:
+        code: {type: string, pattern: '^[A-Z0-9_]{4,20}$'}
+        discount_type: {type: string, enum: [PERCENTAGE, FIXED_AMOUNT]}
+        discount_value: {type: number, format: decimal, minimum: 0.01}
+        min_order_amount: {type: number, format: decimal, minimum: 0}
+        max_uses: {type: integer, minimum: 1}
+        valid_from: {type: string, format: date-time}
+        valid_until: {type: string, format: date-time}
+    PromoResponse:
+      type: object
+      required: [id, code, discount_type, discount_value, min_order_amount, max_uses, current_uses, active]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        discount_type: {type: string}
+        discount_value: {type: number, format: decimal}
+        min_order_amount: {type: number, format: decimal}
+        max_uses: {type: integer}
+        current_uses: {type: integer}
+        active: {type: boolean}
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, role]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, minLength: 8, maxLength: 128}
+        role: {type: string, enum: [USER, SELLER]}
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string}
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refresh_token]
+      properties:
+        refresh_token: {type: string}
+    TokenPair:
+      type: object
+      required: [access_token, refresh_token, token_type]
+      properties:
+        access_token: {type: string}
+        refresh_token: {type: string}
+        token_type: {type: string}
+    UserResponse:
+      type: object
+      required: [id, email, role]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string, format: email}
+        role: {$ref: '#/components/schemas/Role'}
+    ErrorResponse:
+      type: object
+      required: [error_code, message]
+      properties:
+        error_code: {type: string, enum: [PRODUCT_NOT_FOUND, PRODUCT_INACTIVE, ORDER_NOT_FOUND, ORDER_LIMIT_EXCEEDED, ORDER_HAS_ACTIVE, INVALID_STATE_TRANSITION, INSUFFICIENT_STOCK, PROMO_CODE_INVALID, PROMO_CODE_MIN_AMOUNT, ORDER_OWNERSHIP_VIOLATION, VALIDATION_ERROR, TOKEN_EXPIRED, TOKEN_INVALID, REFRESH_TOKEN_INVALID, ACCESS_DENIED]}
+        message: {type: string}
+        details: {type: object, additionalProperties: true, nullable: true}
+  responses:
+    BadRequest: {description: Ошибка валидации, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    Unauthorized: {description: Неверный или просроченный токен, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    Forbidden: {description: Недостаточно прав или чужой заказ, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    NotFound: {description: Товар или заказ не найден, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    Conflict: {description: Конфликт бизнес-правил, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    InvalidPromo: {description: Промокод нельзя применить, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+    TooMany: {description: Слишком частые операции, content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}}
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      operationId: register
+      summary: Регистрация покупателя или продавца
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RegisterRequest'}}}}
+      responses:
+        '201': {description: Пользователь создан, content: {application/json: {schema: {$ref: '#/components/schemas/UserResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /auth/login:
+    post:
+      operationId: login
+      summary: Получение access и refresh токенов
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/LoginRequest'}}}}
+      responses:
+        '200': {description: Токены, content: {application/json: {schema: {$ref: '#/components/schemas/TokenPair'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /auth/refresh:
+    post:
+      operationId: refresh
+      summary: Обновление токенов
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RefreshRequest'}}}}
+      responses:
+        '200': {description: Токены, content: {application/json: {schema: {$ref: '#/components/schemas/TokenPair'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /products:
+    post:
+      operationId: create_product
+      summary: Создать товар; SELLER только от своего имени, ADMIN может создавать товар
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProductCreate'}}}}
+      responses:
+        '201': {description: Товар, content: {application/json: {schema: {$ref: '#/components/schemas/ProductResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    get:
+      operationId: list_products
+      summary: Список товаров; USER, SELLER, ADMIN
+      parameters:
+        - {in: query, name: page, schema: {type: integer, minimum: 0, default: 0}}
+        - {in: query, name: size, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {in: query, name: status, schema: {$ref: '#/components/schemas/ProductStatus'}}
+        - {in: query, name: category, schema: {type: string}}
+      responses:
+        '200': {description: Страница товаров, content: {application/json: {schema: {$ref: '#/components/schemas/ProductPage'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /products/{id}:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: get_product
+      summary: Получить товар; USER, SELLER, ADMIN
+      responses:
+        '200': {description: Товар, content: {application/json: {schema: {$ref: '#/components/schemas/ProductResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      operationId: update_product
+      summary: Обновить товар; SELLER только свой, ADMIN любой
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ProductUpdate'}}}}
+      responses:
+        '200': {description: Товар, content: {application/json: {schema: {$ref: '#/components/schemas/ProductResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    delete:
+      operationId: delete_product
+      summary: Архивировать товар; SELLER только свой, ADMIN любой
+      responses:
+        '204': {description: Товар переведён в ARCHIVED}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /orders:
+    post:
+      operationId: create_order
+      summary: Создать заказ; USER, ADMIN
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrderCreate'}}}}
+      responses:
+        '201': {description: Заказ, content: {application/json: {schema: {$ref: '#/components/schemas/OrderResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidPromo'}
+        '429': {$ref: '#/components/responses/TooMany'}
+  /orders/{id}:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: get_order
+      summary: Получить заказ; USER свой, ADMIN любой
+      responses:
+        '200': {description: Заказ, content: {application/json: {schema: {$ref: '#/components/schemas/OrderResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      operationId: update_order
+      summary: Обновить заказ в CREATED; USER свой, ADMIN любой
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrderUpdate'}}}}
+      responses:
+        '200': {description: Заказ, content: {application/json: {schema: {$ref: '#/components/schemas/OrderResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/InvalidPromo'}
+        '429': {$ref: '#/components/responses/TooMany'}
+  /orders/{id}/cancel:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: cancel_order
+      summary: Отменить заказ; USER свой, ADMIN любой
+      responses:
+        '200': {description: Заказ, content: {application/json: {schema: {$ref: '#/components/schemas/OrderResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /orders/{id}/status:
+    parameters:
+      - {in: path, name: id, required: true, schema: {type: string, format: uuid}}
+    put:
+      operationId: change_order_status
+      summary: Перевести заказ в следующий статус; только ADMIN
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrderStatusUpdate'}}}}
+      responses:
+        '200': {description: Заказ, content: {application/json: {schema: {$ref: '#/components/schemas/OrderResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /promo-codes:
+    post:
+      operationId: create_promo
+      summary: Создать промокод; SELLER, ADMIN
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PromoCreate'}}}}
+      responses:
+        '201': {description: Промокод, content: {application/json: {schema: {$ref: '#/components/schemas/PromoResponse'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
