@@ -168,7 +168,7 @@ def validate_items(products, quantities):
 def calculate_discount(promo, subtotal):
     if promo.discount_type == "PERCENTAGE":
         if promo.discount_value > 70:
-            return subtotal
+            return Decimal("0")
         return (subtotal * promo.discount_value / 100).quantize(MONEY, rounding=ROUND_HALF_UP)
     return min(promo.discount_value, subtotal)
 
